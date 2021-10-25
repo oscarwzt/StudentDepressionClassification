@@ -1,5 +1,7 @@
 #StudentDepressionClassification
 
+The dataset is from my Introduction to Data Science class. The methods used in this project was taught in that class as well. The instructor was professor Pascal Wallisch.
+
 [depressionData.csv](https://github.com/oscarwzt/StudentDepressionClassification/files/7407089/depressionData.csv)
 Here we have data of 2000 students in the following categories: depression (1 means depressed, 0 means not depressed), the number of friends, the number of Facebook friends, extraversion, neuroticism, stress, cortisol.
 
