@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Oct  9 17:13:00 2021
+
+@author: a
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = pd.read_csv('mlDataset.csv', delimiter = ',')
+
+x = data.iloc[:,3:] #predictors
+y = data['depression'].to_numpy() #target
+#%%
+corrMatrix = np.corrcoef(x, rowvar = False)
+plt.imshow(corrMatrix)
+plt.colorbar()
+
+#%% PCA
+from scipy import stats
+from sklearn.decomposition import PCA
+
+xZscored = stats.zscore(x)
+pca = PCA().fit(xZscored)
+xRotated = pca.transform(xZscored)
+eigenValues = pca.explained_variance_
+loadings = pca.components_
+
+plt.bar(np.linspace(1, len(eigenValues), len(eigenValues)), height = eigenValues)
+
+# 1st PC
+plt.bar(np.linspace(1, 6, 6), height = loadings[0]*-1)
+
+# 2nd PC
+plt.bar(np.linspace(1, 6, 6), height = loadings[1]*-1)
+
+# plot PC1 against PC2
+plt.plot(-xRotated[:,0], -xRotated[:,1], 'o', markersize = 1)
+plt.xlabel("Challenge")
+plt.ylabel("Support")
+sns.scatterplot(xRotated[:,0], xRotated[:,1])
+#%% K-means clustering
+xKmeans = np.transpose(np.array([-xRotated[:,0],-xRotated[:,1]]))
+#%%% determine num of clusters
+temp = np.empty([6,1])
+#determine num of clusters
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_samples
+
+for ii in range(2,6):
+    kMeans = KMeans(n_clusters = ii).fit(xKmeans)
+    centerID = kMeans.labels_
+    centerCoord = kMeans.cluster_centers_
+    silhouetteCoef = silhouette_samples(xKmeans, centerID)
+    temp[ii-2] = sum(silhouetteCoef)
+
+plt.plot(temp)
+
+#%% plot clusters
+kMeans = KMeans(n_clusters = 4).fit(xKmeans)
+cId = kMeans.labels_
+cCoord = kMeans.cluster_centers_
+#indexVector = np.linspace(1,len(np.unique(cId)),len(np.unique(cId))) 
+'''for ii in indexVector:
+    plotIndex = np.argwhere(cId == int(ii-1))
+    plt.plot(xKmeans[plotIndex,0],xKmeans[plotIndex,1],'o',markersize=1)
+    plt.plot(cCoord[int(ii-1),0],cCoord[int(ii-1),1],'o',markersize=5,color='black')  
+    plt.xlabel('Challenges')
+    plt.ylabel('Support')'''
+
+
+for ii in range(4):
+    rows = np.argwhere(cId == ii)
+    plt.plot(xKmeans[rows, 0], xKmeans[rows, 1], 'o', markersize = 1)
+    plt.plot(cCoord[ii,0], cCoord[ii,1], 'o', markersize = 5, color = 'purple')
+    plt.xlabel("Challenges")
+    plt.ylabel('Support')
+
+plt.plot(xKmeans[np.argwhere(y==0),0], xKmeans[np.argwhere(y==0),1], 'o', color = 'green', markersize =1 )
+plt.plot(xKmeans[np.argwhere(y==1),0], xKmeans[np.argwhere(y==1),1], 'o', color = 'blue', markersize =1 )
+#plt.plot(xKmeans[np.argwhere(y==0),0], xKmeans[np.argwhere(y==0),1],'o',markersize=5,color='green')
+#plt.plot(X[np.argwhere(yOutcomes==1),0],X[np.argwhere(yOutcomes==1),1],'o',markersize=5,color='blue')
+#%% prediction
+from sklearn import svm
+from sklearn.tree import DecisionTreeClassifier
+
+SVM = svm.SVC().fit(xKmeans, y)
+decision = SVM.predict(xKmeans)
+accuracy = sum(decision == y) / len(decision)
+plt.plot(decision, 'o')
+
+#%% train and test
+from sklearn.model_selection import train_test_split
+def modelTest(x, y, testSize, model):
+    xTrain, xTest, yTrain, yTest = train_test_split(x,y, test_size = testSize)
+    model = model.fit(xTrain, yTrain)
+    prediction = model.predict(xTest)
+    accuracy = sum(yTest == prediction)/len(yTest)
+    
+    return accuracy
+
+SVM = svm.SVC()
+decisionTree = DecisionTreeClassifier()
+
+ScoreSVM = modelTest(xKmeans, y, 0.33, SVM)
+ScoreDecisionTree = modelTest(xKmeans, y, 0.33, decisionTree)
+
+#%% cross validation
+from sklearn.linear_model import LogisticRegression as LR
+from sklearn.model_selection import cross_val_score as cvs
+CVtree = np.mean(cvs(decisionTree, xKmeans, y, cv = 5))
+CVsvm = np.mean(cvs(SVM, xKmeans, y, cv = 5))
+
+logit = LR()
+CVlr = np.mean(cvs(logit, xKmeans, y, cv = 5))
+#%%
+
+
+
+    
