@@ -1,4 +1,5 @@
 StudentDepressionClassification
+
 #[mlDataset.csv](https://github.com/oscarwzt/StudentDepressionClassification/files/7407083/mlDataset.csv)
 Here we have data of 2000 students in the following categories: depression (1 means depressed, 0 means not depressed), the number of friends, the number of Facebook friends, extraversion, neuroticism, stress, cortisol.
 
